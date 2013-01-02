@@ -11,6 +11,7 @@ class Request {
 	private $method;
 	private $headerRaw;
 	private $path;
+	private $uri;
 	private $content;
 	private $contentRaw;
 	private $valid;
@@ -44,7 +45,7 @@ class Request {
         if (preg_match("/^(GET|POST) ([^\s]+) HTTP\/[0-9]\.[0-9]\r\n(.*)$/s"
 			, $this->contentRaw, $matches)) {
 			$this->method = $matches[1];
-			$this->path = $matches[2];
+			$this->uri = $matches[2];
 			$this->headerRaw = $matches[3];
 			$this->valid = true;
 			return true;
@@ -62,6 +63,10 @@ class Request {
 	
 	public function getPath() {
 		return $this->path;
+	}
+	
+	public function getURI() {
+		return $this->uri;
 	}
 	
 	public function getContent() {

@@ -17,6 +17,13 @@ class Response {
 		$this->content = 'It\'s Works';
 		
 		$this->setHeader('Content-Type', 'text/html');
+		
+		if ($request->isValid()) {
+			
+		} else {
+			$this->status = 400; // Bad Request
+			$this->content = $this->status.' '.$this->getStatusMessage();
+		}
 	}
 	
 	public function getStatus() {
