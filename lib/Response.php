@@ -20,6 +20,43 @@ class Response {
 		
 		if ($request->isValid()) {
 			
+			$path = $request->getPath();
+			// resolve path into real path
+			$path = dirname(dirname(__FILE__)).'/htdocs'.$path;
+			
+			if (is_dir($path)) {
+				// directory index
+				if (is_file($path.'index.html')) {
+					$path .= 'index.html';
+				} elseif (is_file($path.'index.php')) {
+					$path .= 'index.php';
+				} else {
+					// Directory list is not supported
+					$this->status = 501; // Not Implemented
+					$this->content = $this->status
+						.' '.$this->getStatusMessage()
+						.'<br />Directory Listing is not implemented'
+						;
+					return false;
+				}
+			}
+			
+			if (!is_file($path)) {
+				// 404 Not Found
+				$this->status = 404;
+				$this->content = $this->status
+					.' '.$this->getStatusMessage()
+					.'<br />'.htmlentities($path)
+					;
+				return false;
+			} elseif (preg_match("/\.php$/", $path)) {
+				// PHP scripts
+			} else {
+				// Static files
+				$this->setHeader('Content-Type',mime_content_type($path));
+				$this->content = file_get_contents($path);
+			}
+			
 		} else {
 			$this->status = 400; // Bad Request
 			$this->content = $this->status.' '.$this->getStatusMessage();

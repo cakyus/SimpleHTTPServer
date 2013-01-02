@@ -10,7 +10,6 @@ class Request {
 	private $remotePort;
 	private $method;
 	private $headerRaw;
-	private $path;
 	private $uri;
 	private $content;
 	private $contentRaw;
@@ -62,7 +61,8 @@ class Request {
 	}
 	
 	public function getPath() {
-		return $this->path;
+		preg_match("/^[^\?]+/s", $this->uri, $match);
+		return $match[0];
 	}
 	
 	public function getURI() {
