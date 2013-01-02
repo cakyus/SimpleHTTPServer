@@ -17,7 +17,16 @@ class Server {
 			$logger->write('socket_create() failed. '.socket_strerror(socket_last_error()));
 			return false;
 		}
-
+		
+		// Reuse address and port, and get rid of error: 
+		// "unable to bind, address already in use"
+		// http://php.net/manual/en/function.socket-bind.php#22200
+		
+		if (!socket_set_option($sock, SOL_SOCKET, SO_REUSEADDR, 1)) {
+			$logger->write(socket_strerror(socket_last_error($sock)));
+			return false;
+		} 
+		
 		if (socket_bind($sock, $this->host, $this->port) === false) {
 			$logger->write('socket_bind() failed. '.socket_strerror(socket_last_error($sock)));
 			return false;
@@ -47,13 +56,20 @@ class Server {
 				  $request->getRemoteHost()
 				, $request->getRemotePort()
 				, $request->getMethod()
-				, $request->getPath()
+				, $request->getURI()
 				, $response->getStatus()
 				, $messageSize
 				);
 			
 			socket_write($clientSock, $message, $messageSize);
 			socket_close($clientSock);
+			
+			// @todo find the way to shutdown server with Ctrl+C
+			//       in which immidiately release binding 
+			//       to listened port
+			if ($request->getURI() == '/stop') {
+				break;
+			}
 		};
     
 		socket_close($sock);
