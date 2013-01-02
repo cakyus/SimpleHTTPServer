@@ -14,7 +14,6 @@ class Response {
 		
 		$this->status = 200;
 		$this->headers = array();
-		$this->content = 'It\'s Works';
 		
 		$this->setHeader('Content-Type', 'text/html');
 		
