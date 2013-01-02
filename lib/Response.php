@@ -19,9 +19,10 @@ class Response {
 		
 		if ($request->isValid()) {
 			
-			$path = $request->getPath();
+			$URI = $request->getPath();
 			// resolve path into real path
-			$path = dirname(dirname(__FILE__)).'/htdocs'.$path;
+			$docRoot = dirname(dirname(__FILE__)).'/htdocs';
+			$path = $docRoot.$URI;
 			
 			if (is_dir($path)) {
 				// directory index
@@ -45,11 +46,26 @@ class Response {
 				$this->status = 404;
 				$this->content = $this->status
 					.' '.$this->getStatusMessage()
-					.'<br />'.htmlentities($path)
+					.'<br />'.htmlentities($URI)
 					;
 				return false;
 			} elseif (preg_match("/\.php$/", $path)) {
 				// PHP scripts
+				$cmdOut = tempnam(sys_get_temp_dir(), 'php_');
+				$cmdIO = array(array('file', $cmdOut, 'a'));
+				$cmdEnv = array('some_option' => 'aeiou');
+				
+				$cmdHadler = proc_open(
+					  'php "'.$path.'" > "'.$cmdOut.'"'
+					, $cmdIO, $cmdPipes, $docRoot, $cmdEnv
+					);
+					
+				if (is_resource($cmdHadler)) {
+					proc_close($cmdHadler);
+					$this->content = file_get_contents($cmdOut);
+					unlink($cmdOut);
+				}
+				
 			} else {
 				// Static files
 				$this->setHeader('Content-Type',mime_content_type($path));
