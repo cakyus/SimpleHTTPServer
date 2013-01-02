@@ -63,13 +63,6 @@ class Server {
 			
 			socket_write($clientSock, $message, $messageSize);
 			socket_close($clientSock);
-			
-			// @todo find the way to shutdown server with Ctrl+C
-			//       in which immidiately release binding 
-			//       to listened port
-			if ($request->getURI() == '/!stop') {
-				break;
-			}
 		};
     
 		socket_close($sock);
