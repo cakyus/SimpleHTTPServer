@@ -9,16 +9,18 @@ class Request {
 	private $remoteHost;
 	private $remotePort;
 	private $method;
-	private $headers;
+	private $headerRaw;
 	private $path;
 	private $content;
 	private $contentRaw;
+	private $valid;
 	
 	public function __construct($sock) {
 		
 		$logger = new Logger;
 		
 		$this->headers = array();
+		$this->valid = false;
 		
 		socket_getpeername(
 			  $sock
@@ -32,9 +34,22 @@ class Request {
 				);
 			return false;
         }
+        
         if (!$this->contentRaw = trim($this->contentRaw)) {
 			return false;
         }
+        
+        // @todo POST Request will requires advanced regex pattern
+        //       for request body
+        if (preg_match("/^(GET|POST) ([^\s]+) HTTP\/[0-9]\.[0-9]\r\n(.*)$/s"
+			, $this->contentRaw, $matches)) {
+			$this->method = $matches[1];
+			$this->path = $matches[2];
+			$this->headerRaw = $matches[3];
+			$this->valid = true;
+			return true;
+		}
+		
 	}
 	
 	public function isValid() {
