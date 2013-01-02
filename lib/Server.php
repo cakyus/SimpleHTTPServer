@@ -67,7 +67,7 @@ class Server {
 			// @todo find the way to shutdown server with Ctrl+C
 			//       in which immidiately release binding 
 			//       to listened port
-			if ($request->getURI() == '/stop') {
+			if ($request->getURI() == '/!stop') {
 				break;
 			}
 		};
