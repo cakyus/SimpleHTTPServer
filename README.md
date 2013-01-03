@@ -10,10 +10,11 @@ php test.php
 * support HTTP GET Method
 * serve static files
 * serve PHP scripts
+* support HTTP POST Method
 
 ## Todo
-* support HTTP POST Method
 * move configurations to Server.php
+* PHP Session Support
 
 ## Notes
 * No execution timeout

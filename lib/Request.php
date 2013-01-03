@@ -15,6 +15,7 @@ class Request {
 	private $contentRaw;
 	private $valid;
 	private $documentRoot;
+	private $postMessage;
 	
 	public function __construct($sock) {
 		
@@ -43,15 +44,21 @@ class Request {
         
         // @todo POST Request will requires advanced regex pattern
         //       for request body
-        if (preg_match("/^(GET|POST) ([^\s]+) HTTP\/[0-9]\.[0-9]\r\n(.*)$/s"
-			, $this->contentRaw, $matches)) {
-			$this->method = $matches[1];
-			$this->uri = $matches[2];
-			$this->headerRaw = $matches[3];
+        if (preg_match("/^(GET|POST) ([^\s]+) HTTP\/[0-9]\.[0-9]\r\n(.+?)(\r\n\r\n(.*))?$/s"
+			, $this->contentRaw, $match)) {
+			$this->method = $match[1];
+			$this->uri = $match[2];
+			$this->headerRaw = $match[3];
 			$this->valid = true;
+			if (isset($match[5])) {
+				$this->postMessage = $match[5];
+			}
 			return true;
 		}
-		
+	}
+	
+	public function getPostMessage() {
+		return $this->postMessage;
 	}
 	
 	public function isValid() {
@@ -63,8 +70,9 @@ class Request {
 	}
 	
 	public function getPath() {
-		preg_match("/^[^\?]+/s", $this->uri, $match);
-		return $match[0];
+		if (preg_match("/^[^\?]+/s", $this->uri, $match)) {
+			return $match[0];
+		}
 	}
 	
 	public function getQueryString() {
@@ -113,7 +121,10 @@ class Request {
 	}
 	
 	public function getCGIVars() {
+		
 		$vars = array();
+		
+		// Minimum CGI Environments Variables
 		$vars['REQUEST_METHOD'] = $this->getMethod();
 		$vars['QUERY_STRING'] = $this->getQueryString();
 		$vars['REQUEST_URI'] = $this->getURI();
@@ -121,9 +132,27 @@ class Request {
 		$vars['REMOTE_ADDR'] = $this->getRemoteHost();
 		$vars['REMOTE_PORT'] = $this->getRemotePort();
 		$vars['SCRIPT_FILENAME'] = $this->getScriptPath();
-		$vars['DOCUMENT_ROOT'] = $this->documentRoot;
+		$vars['DOCUMENT_ROOT'] = $this->getDocumentRoot();
 		$vars['REDIRECT_STATUS'] = 200;
 		$vars['GATEWAY_INTERFACE'] = 'CGI/1.1';
+		
+		// Passthrough client HTTP Headers
+		if (preg_match_all("/^([^:]+): (.+)\s$/m", $this->headerRaw, $match)) {
+			for ($i = 0; $i < count($match[1]); $i++){
+				// eg. User-Agent -> HTTP_USER_AGENT
+				$vars['HTTP_'.strtoupper(str_replace('-','_',$match[1][$i]))]
+					= $match[2][$i];
+			}
+		}
+		
+		// POST Method
+		if ($this->getMethod() == 'POST') {
+			$vars['CONTENT_LENGTH'] = strlen($this->getPostMessage());
+			if (isset($vars['HTTP_CONTENT_TYPE'])) {
+				$vars['CONTENT_TYPE'] = $vars['HTTP_CONTENT_TYPE'];
+			}
+		}
+		
 		return $vars;
 	}
 	

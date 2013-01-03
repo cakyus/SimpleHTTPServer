@@ -41,8 +41,9 @@ class Response {
 			} elseif (preg_match("/\.php$/", $path)) {
 				// PHP scripts
 				$cmdIO = array(
-					  array('pipe', 'r') // stdin
-					, array('pipe', 'w') // stdout
+					  0 => array('pipe', 'r') // stdin
+					, 1 => array('pipe', 'w') // stdout
+					, 2 => array('file', 'error.log', 'aw') // stderr
 					);
 				$cmdEnv = $request->getCGIVars();
 				
@@ -52,6 +53,17 @@ class Response {
 					);
 					
 				if (is_resource($cmdHadler)) {
+					
+					if ($request->getMethod() == 'POST') {
+						$postMessage = $request->getPostMessage();
+						if (strlen($postMessage)) {
+							// POST Method, write POST Message to STDIN
+							fwrite($cmdPipes[0], $request->getPostMessage()."\n");
+						}
+					}
+					
+					fclose($cmdPipes[0]);
+					
 					$this->content = stream_get_contents($cmdPipes[1]);
 					proc_close($cmdHadler);
 				}
