@@ -13,8 +13,6 @@ php test.php
 
 ## Todo
 * support HTTP POST Method
-* support $_GET and $_POST
-* parse QUERY_STRING
 
 ## Notes
 * No execution timeout

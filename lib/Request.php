@@ -67,6 +67,13 @@ class Request {
 		return $match[0];
 	}
 	
+	public function getQueryString() {
+		if (preg_match("/\?([^\s]+)/", $this->uri, $match)) {
+			return $match[1];
+		}
+		return false;
+	}
+	
 	public function getURI() {
 		return $this->uri;
 	}
@@ -108,13 +115,11 @@ class Request {
 	public function getCGIVars() {
 		$vars = array();
 		$vars['REQUEST_METHOD'] = $this->getMethod();
-		$vars['QUERY_STRING'] = 'fieldname1=value1&fieldname2=value2&fieldname3=value3';
+		$vars['QUERY_STRING'] = $this->getQueryString();
 		$vars['REQUEST_URI'] = $this->getURI();
-		$vars['SCRIPT_NAME'] = $this->getURI();
-		$vars['REMOTE_HOST'] = $this->getRemoteHost();
+		$vars['SCRIPT_NAME'] = $this->getPath();
 		$vars['REMOTE_ADDR'] = $this->getRemoteHost();
 		$vars['REMOTE_PORT'] = $this->getRemotePort();
-		$vars['PATH_INFO'] = $this->getPath();
 		$vars['SCRIPT_FILENAME'] = $this->getScriptPath();
 		$vars['DOCUMENT_ROOT'] = $this->documentRoot;
 		$vars['REDIRECT_STATUS'] = 200;
