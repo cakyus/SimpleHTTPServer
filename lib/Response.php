@@ -35,7 +35,7 @@ class Response {
 				$this->status = 404;
 				$this->content = $this->status
 					.' '.$this->getStatusMessage()
-					.'<br />'.htmlentities($URI)
+					.'<br />'.htmlentities($request->getPath())
 					;
 				return false;
 			} elseif (preg_match("/\.php$/", $path)) {

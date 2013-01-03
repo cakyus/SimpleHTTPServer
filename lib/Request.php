@@ -101,9 +101,9 @@ class Request {
 		// resolve directory index files
 		if (is_dir($path)) {
 			if (is_file($path.'index.html')) {
-				$path .= 'index.html';
+				return $path.'index.html';
 			} elseif (is_file($path.'index.php')) {
-				$path .= 'index.php';
+				return $path.'index.php';
 			}
 		} elseif (is_file($path)) {
 			return $path;
