@@ -7,14 +7,13 @@ php test.php
 
 ## Features
 * a working http server
-* support HTTP GET Method
+* support GET and POST Method
 * serve static files
 * serve PHP scripts
-* support HTTP POST Method
+* PHP Session Support
 
 ## Todo
 * move configurations to Server.php
-* PHP Session Support
 
 ## Notes
 * No execution timeout
