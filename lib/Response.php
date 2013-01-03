@@ -9,6 +9,7 @@ class Response {
 	private $content;
 	
 	private $httpVersion = '1.1';
+	private $isCGIRequest = false;
 	
 	public function __construct(Request $request) {
 		
@@ -19,29 +20,17 @@ class Response {
 		
 		if ($request->isValid()) {
 			
-			$URI = $request->getPath();
-			// resolve path into real path
-			$docRoot = dirname(dirname(__FILE__)).'/htdocs';
-			$path = $docRoot.$URI;
+			$path = $request->getScriptPath();
 			
 			if (is_dir($path)) {
-				// directory index
-				if (is_file($path.'index.html')) {
-					$path .= 'index.html';
-				} elseif (is_file($path.'index.php')) {
-					$path .= 'index.php';
-				} else {
-					// Directory list is not supported
-					$this->status = 501; // Not Implemented
-					$this->content = $this->status
-						.' '.$this->getStatusMessage()
-						.'<br />Directory Listing is not implemented'
-						;
-					return false;
-				}
-			}
-			
-			if (!is_file($path)) {
+				// Directory list is not supported
+				$this->status = 501; // Not Implemented
+				$this->content = $this->status
+					.' '.$this->getStatusMessage()
+					.'<br />Directory Listing is not implemented'
+					;
+				return false;
+			} elseif (!is_file($path)) {
 				// 404 Not Found
 				$this->status = 404;
 				$this->content = $this->status
@@ -51,20 +40,23 @@ class Response {
 				return false;
 			} elseif (preg_match("/\.php$/", $path)) {
 				// PHP scripts
-				$cmdOut = tempnam(sys_get_temp_dir(), 'php_');
-				$cmdIO = array(array('file', $cmdOut, 'a'));
-				$cmdEnv = array('some_option' => 'aeiou');
+				$cmdIO = array(
+					  array('pipe', 'r') // stdin
+					, array('pipe', 'w') // stdout
+					);
+				$cmdEnv = $request->getCGIVars();
 				
 				$cmdHadler = proc_open(
-					  'php "'.$path.'" > "'.$cmdOut.'"'
-					, $cmdIO, $cmdPipes, $docRoot, $cmdEnv
+					  'php-cgi', $cmdIO, $cmdPipes
+					, $request->getDocumentRoot(), $cmdEnv
 					);
 					
 				if (is_resource($cmdHadler)) {
+					$this->content = stream_get_contents($cmdPipes[1]);
 					proc_close($cmdHadler);
-					$this->content = file_get_contents($cmdOut);
-					unlink($cmdOut);
 				}
+				
+				$this->isCGIRequest = true;
 				
 			} else {
 				// Static files
@@ -83,6 +75,15 @@ class Response {
 	}
 	
 	public function getMessage() {
+		
+		if ($this->isCGIRequest) {
+			return 'HTTP/'.$this->httpVersion
+			.' '.$this->status
+			.' '.$this->getStatusMessage()."\r\n"
+			.$this->content
+			;
+		}
+		
 		return 'HTTP/'.$this->httpVersion
 			.' '.$this->status
 			.' '.$this->getStatusMessage()."\r\n"

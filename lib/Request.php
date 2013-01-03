@@ -14,6 +14,7 @@ class Request {
 	private $content;
 	private $contentRaw;
 	private $valid;
+	private $documentRoot;
 	
 	public function __construct($sock) {
 		
@@ -21,6 +22,7 @@ class Request {
 		
 		$this->headers = array();
 		$this->valid = false;
+		$this->documentRoot = dirname(dirname(__FILE__)).'/htdocs';
 		
 		socket_getpeername(
 			  $sock
@@ -69,12 +71,55 @@ class Request {
 		return $this->uri;
 	}
 	
+	public function getHeaderRaw() {
+		return $this->headerRaw;
+	}
+	
 	public function getContent() {
 		return $this->content;
 	}
 	
 	public function getContentRaw() {
 		return $this->contentRaw;
+	}
+	
+	public function getDocumentRoot() {
+		return $this->documentRoot;
+	}
+	
+	public function getScriptPath() {
+		
+		$path = $this->documentRoot.$this->getPath();
+
+		// resolve directory index files
+		if (is_dir($path)) {
+			if (is_file($path.'index.html')) {
+				$path .= 'index.html';
+			} elseif (is_file($path.'index.php')) {
+				$path .= 'index.php';
+			}
+		} elseif (is_file($path)) {
+			return $path;
+		}
+		
+		return false;
+	}
+	
+	public function getCGIVars() {
+		$vars = array();
+		$vars['REQUEST_METHOD'] = $this->getMethod();
+		$vars['QUERY_STRING'] = 'fieldname1=value1&fieldname2=value2&fieldname3=value3';
+		$vars['REQUEST_URI'] = $this->getURI();
+		$vars['SCRIPT_NAME'] = $this->getURI();
+		$vars['REMOTE_HOST'] = $this->getRemoteHost();
+		$vars['REMOTE_ADDR'] = $this->getRemoteHost();
+		$vars['REMOTE_PORT'] = $this->getRemotePort();
+		$vars['PATH_INFO'] = $this->getPath();
+		$vars['SCRIPT_FILENAME'] = $this->getScriptPath();
+		$vars['DOCUMENT_ROOT'] = $this->documentRoot;
+		$vars['REDIRECT_STATUS'] = 200;
+		$vars['GATEWAY_INTERFACE'] = 'CGI/1.1';
+		return $vars;
 	}
 	
 	public function getRemoteHost() {
