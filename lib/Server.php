@@ -56,7 +56,7 @@ class Server {
 				  $request->getRemoteHost()
 				, $request->getRemotePort()
 				, $request->getMethod()
-				, $request->getURI()
+				, $request->getPath()
 				, $response->getStatus()
 				, $messageSize
 				);

@@ -13,6 +13,7 @@ php test.php
 
 ## Todo
 * support HTTP POST Method
+* move configurations to Server.php
 
 ## Notes
 * No execution timeout
