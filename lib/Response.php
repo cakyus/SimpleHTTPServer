@@ -26,12 +26,25 @@ class Response {
 			$path = $request->getScriptPath();
 			
 			if (is_dir($path)) {
+				
 				// Directory list is not supported
+				
+				if (substr($path, -1) != '/') {
+					$this->status = '301';
+					$this->setHeader('Location', $request->getURI().'/');
+					$this->content = $this->status
+						.' '.$this->getStatusMessage()
+						.'<br />Redirecting to '.$request->getURI().'/'
+						;
+					return false;
+				}
+				
 				$this->status = 501; // Not Implemented
 				$this->content = $this->status
 					.' '.$this->getStatusMessage()
 					.'<br />Directory Listing is not implemented'
 					;
+				
 				return false;
 			} elseif (!is_file($path)) {
 				// 404 Not Found
