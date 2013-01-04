@@ -19,7 +19,7 @@ class Response {
 		$this->status = 200;
 		$this->headers = array();
 		
-		$this->setHeader('Content-Type', 'text/html');
+		$this->setHeader('Content-Type', $request->getMimeContentType());
 		
 		if ($request->isValid()) {
 			
@@ -75,7 +75,6 @@ class Response {
 				
 			} else {
 				// Static files
-				$this->setHeader('Content-Type',mime_content_type($path));
 				$this->content = file_get_contents($path);
 			}
 			

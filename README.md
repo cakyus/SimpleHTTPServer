@@ -18,4 +18,3 @@ php test.php
 ## Notes
 * No execution timeout
 * Single thread
-* PHP scripts is executed via PHP CLI, not PHP CGI
