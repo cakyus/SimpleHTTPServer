@@ -19,6 +19,8 @@ class Request {
 	private $contentRaw;
 	private $valid;
 	private $postMessage;
+	private $uriPath;
+	private $scriptPath;
 	
 	public function __construct($sock) {
 		
@@ -56,10 +58,26 @@ class Request {
 			if (isset($match[5])) {
 				$this->postMessage = $match[5];
 			}
-			return true;
+			
+			preg_match("/^[^\?]+/s", $this->uri, $match);
+			$this->uriPath = $match[0];
+			
+			$this->scriptPath = $this->documentRoot.$this->uriPath;
+
+			// resolve directory index files
+			if (is_dir($this->scriptPath)) {
+				if (is_file($this->scriptPath.'index.html')) {
+					$this->scriptPath .= 'index.html';
+					$this->uriPath .= 'index.html';
+				} elseif (is_file($this->scriptPath.'index.php')) {
+					$this->scriptPath .= 'index.php';
+					$this->uriPath .= 'index.php';
+				}
+			} elseif (!is_file($this->scriptPath)) {
+				$this->scriptPath = false;
+			}
 		}
 		
-		echo $this->contentRaw."\n";
 	}
 	
 	public function getPostMessage() {
@@ -75,9 +93,7 @@ class Request {
 	}
 	
 	public function getPath() {
-		if (preg_match("/^[^\?]+/s", $this->uri, $match)) {
-			return $match[0];
-		}
+		return $this->uriPath;
 	}
 	
 	public function getQueryString() {
@@ -108,22 +124,7 @@ class Request {
 	}
 	
 	public function getScriptPath() {
-		
-		$path = $this->documentRoot.$this->getPath();
-
-		// resolve directory index files
-		if (is_dir($path)) {
-			if (is_file($path.'index.html')) {
-				return $path.'index.html';
-			} elseif (is_file($path.'index.php')) {
-				return $path.'index.php';
-			}
-			return $path;
-		} elseif (is_file($path)) {
-			return $path;
-		}
-		
-		return false;
+		return $this->scriptPath;
 	}
 	
 	public function getCGIVars() {
