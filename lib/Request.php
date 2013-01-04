@@ -118,6 +118,7 @@ class Request {
 			} elseif (is_file($path.'index.php')) {
 				return $path.'index.php';
 			}
+			return $path;
 		} elseif (is_file($path)) {
 			return $path;
 		}
