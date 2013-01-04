@@ -3,9 +3,11 @@
 namespace SimpleHTTPServer;
 
 class Server {
-	
+
+	// <CONFIGURATION>
 	public $host = '127.0.0.1';
 	public $port = 8808;
+	// </CONFIGURATION>
 	
 	public function start() {
 		

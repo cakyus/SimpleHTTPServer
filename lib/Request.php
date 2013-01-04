@@ -4,7 +4,10 @@ namespace SimpleHTTPServer;
 
 class Request {
 	
-	public $maxRequestSize = 2097152; // 2MB
+	// <CONFIGURATION>
+	private $maxRequestSize = 2097152; // 2MB
+	private $documentRoot;
+	// </CONFIGURATION>
 	
 	private $remoteHost;
 	private $remotePort;
@@ -14,7 +17,6 @@ class Request {
 	private $content;
 	private $contentRaw;
 	private $valid;
-	private $documentRoot;
 	private $postMessage;
 	
 	public function __construct($sock) {
@@ -55,6 +57,8 @@ class Request {
 			}
 			return true;
 		}
+		
+		echo $this->contentRaw."\n";
 	}
 	
 	public function getPostMessage() {

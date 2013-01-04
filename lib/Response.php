@@ -4,11 +4,14 @@ namespace SimpleHTTPServer;
 
 class Response {
 	
+	// <CONFIGURATION>
+	private $httpVersion = '1.1';
+	// </CONFIGURATION>
+	
 	private $status;
 	private $headers;
 	private $content;
 	
-	private $httpVersion = '1.1';
 	private $isCGIRequest = false;
 	
 	public function __construct(Request $request) {
