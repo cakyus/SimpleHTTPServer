@@ -5,15 +5,19 @@ namespace SimpleHTTPServer;
 class Server {
 
 	// <CONFIGURATION>
-	public $host = '127.0.0.1';
-	public $port = 8808;
+	private $serverName;
+	private $serverPort;
 	// </CONFIGURATION>
 	
 	public function start() {
 		
+		$config = new Config;
 		$logger = new Logger;
 		
-		$logger->write('Serving at '.$this->host.' port '.$this->port);
+		$this->serverName = $config->serverName;
+		$this->serverPort = $config->serverPort;
+		
+		$logger->write('Serving at '.$this->serverName.' port '.$this->serverPort);
 		
 		if (($sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false) {
 			$logger->write('socket_create() failed. '.socket_strerror(socket_last_error()));
@@ -29,7 +33,7 @@ class Server {
 			return false;
 		} 
 		
-		if (socket_bind($sock, $this->host, $this->port) === false) {
+		if (socket_bind($sock, $this->serverName, $this->serverPort) === false) {
 			$logger->write('socket_bind() failed. '.socket_strerror(socket_last_error($sock)));
 			return false;
 		}
@@ -49,16 +53,16 @@ class Server {
 			$remoteHost = '';
 			$remotePort = '';
 			
-			$request = new Request($clientSock);
+			$request = new Request($clientSock, $this);
 			$response = new Response($request);
 			$message = $response->getMessage();
 			$messageSize = strlen($message);
 			
 			$logger->write(
-				  $request->getRemoteHost()
-				, $request->getRemotePort()
-				, $request->getMethod()
-				, $request->getPath()
+				  $request->getCGIVar('REMOTE_ADDR')
+				, $request->getCGIVar('REMOTE_PORT')
+				, $request->getCGIVar('REQUEST_METHOD')
+				, $request->getCGIVar('SCRIPT_NAME')
 				, $response->getStatus()
 				, $messageSize
 				);
@@ -70,6 +74,14 @@ class Server {
 		socket_close($sock);
 		
 		$logger->write('Shutdown');
+	}
+	
+	public function getServerName() {
+		return $this->serverName;
+	}
+	
+	public function getServerPort() {
+		return $this->serverPort;
 	}
 }
 

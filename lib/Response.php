@@ -5,7 +5,7 @@ namespace SimpleHTTPServer;
 class Response {
 	
 	// <CONFIGURATION>
-	private $httpVersion = '1.1';
+	private $httpVersion;
 	// </CONFIGURATION>
 	
 	private $status;
@@ -16,6 +16,9 @@ class Response {
 	
 	public function __construct(Request $request) {
 		
+		$config = new Config;
+		
+		$this->httpVersion = $config->httpVersion;
 		$this->status = 200;
 		$this->headers = array();
 		
@@ -23,7 +26,7 @@ class Response {
 		
 		if ($request->isValid()) {
 			
-			$path = $request->getScriptPath();
+			$path = $request->getCGIVar('SCRIPT_FILENAME');;
 			
 			if (is_dir($path)) {
 				
@@ -31,10 +34,10 @@ class Response {
 				
 				if (substr($path, -1) != '/') {
 					$this->status = '301';
-					$this->setHeader('Location', $request->getURI().'/');
+					$this->setHeader('Location', $request->getCGIVar('REQUEST_URI').'/');
 					$this->content = $this->status
 						.' '.$this->getStatusMessage()
-						.'<br />Redirecting to '.$request->getURI().'/'
+						.'<br />Redirecting to '.$request->getCGIVar('REQUEST_URI').'/'
 						;
 					return false;
 				}
@@ -51,7 +54,7 @@ class Response {
 				$this->status = 404;
 				$this->content = $this->status
 					.' '.$this->getStatusMessage()
-					.'<br />'.htmlentities($request->getPath())
+					.'<br />'.htmlentities($request->getCGIVar('SCRIPT_NAME'))
 					;
 				return false;
 			} elseif (preg_match("/\.php$/", $path)) {
@@ -61,16 +64,21 @@ class Response {
 					, 1 => array('pipe', 'w') // stdout
 					, 2 => array('file', 'error.log', 'aw') // stderr
 					);
+				
+				// REDIRECT_STATUS is required by php-cgi
+				$request->setCGIVar('REDIRECT_STATUS', 200);
+				$request->setCGIVar('GATEWAY_INTERFACE', 'CGI/1.1');
+				
 				$cmdEnv = $request->getCGIVars();
 				
 				$cmdHadler = proc_open(
 					  'php-cgi', $cmdIO, $cmdPipes
-					, $request->getDocumentRoot(), $cmdEnv
+					, $request->getCGIVar('DOCUMENT_ROOT'), $cmdEnv
 					);
 					
 				if (is_resource($cmdHadler)) {
 					
-					if ($request->getMethod() == 'POST') {
+					if ($request->getCGIVar('REQUEST_METHOD') == 'POST') {
 						$postMessage = $request->getPostMessage();
 						if (strlen($postMessage)) {
 							// POST Method, write POST Message to STDIN

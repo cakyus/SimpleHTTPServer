@@ -5,35 +5,43 @@ namespace SimpleHTTPServer;
 class Request {
 	
 	// <CONFIGURATION>
-	private $maxRequestSize = 2097152; // 2MB
-	private $documentRoot;
-	private $mimeContentType = 'text/html';	
+		// Maximum number of bytes which client can send
+	private $maxRequestSize;
+		// MIME Content Type
+	private $mimeContentType;
 	// </CONFIGURATION>
 	
-	private $remoteHost;
-	private $remotePort;
-	private $method;
-	private $headerRaw;
-	private $uri;
-	private $content;
-	private $contentRaw;
-	private $valid;
-	private $postMessage;
-	private $uriPath;
-	private $scriptPath;
+	private $CGIVars;
 	
-	public function __construct($sock) {
+	// all string remote user sent to server
+	private $contentRaw;
+	// all header which is part of $contentRaw
+	private $headerRaw;
+	// indicate whether user send a valid HTTP request
+	private $valid;
+	// all post message which is part of $contentRaw
+	private $postMessage;
+	
+	public function __construct($sock, Server $server) {
 		
+		$config = new Config;
 		$logger = new Logger;
 		
+		$this->CGIVars = array();
 		$this->headers = array();
 		$this->valid = false;
-		$this->documentRoot = dirname(dirname(__FILE__)).'/htdocs';
 		
+		// $_ENV['DOCUMENT_ROOT']
+		$this->CGIVars['DOCUMENT_ROOT'] = $config->documentRoot;
+		$this->maxRequestSize = $config->maxRequestSize;
+		$this->mimeContentType = $config->mimeContentType;
+		
+		// $_ENV['REMOTE_ADDR']
+		// $_ENV['REMOTE_PORT']
 		socket_getpeername(
 			  $sock
-			, $this->remoteHost
-			, $this->remotePort
+			, $this->CGIVars['REMOTE_ADDR']
+			, $this->CGIVars['REMOTE_PORT']
 			);
 			
         if (false === ($this->contentRaw = socket_read($sock, $this->maxRequestSize))) {
@@ -47,37 +55,64 @@ class Request {
 			return false;
         }
         
-        // @todo POST Request will requires advanced regex pattern
-        //       for request body
+        // $_ENV['REQUEST_METHOD']
+        // $_ENV['REQUEST_URI']
         if (preg_match("/^(GET|POST) ([^\s]+) HTTP\/[0-9]\.[0-9]\r\n(.+?)(\r\n\r\n(.*))?$/s"
 			, $this->contentRaw, $match)) {
-			$this->method = $match[1];
-			$this->uri = $match[2];
+			$this->CGIVars['REQUEST_METHOD'] = $match[1];
+			$this->CGIVars['REQUEST_URI'] = $match[2];
 			$this->headerRaw = $match[3];
 			$this->valid = true;
 			if (isset($match[5])) {
 				$this->postMessage = $match[5];
 			}
 			
-			preg_match("/^[^\?]+/s", $this->uri, $match);
-			$this->uriPath = $match[0];
+			// $_ENV['SCRIPT_NAME']
+			// $_ENV['SCRIPT_FILENAME']
+			preg_match("/^[^\?]+/s", $this->CGIVars['REQUEST_URI'], $match);
+			$this->CGIVars['SCRIPT_NAME'] = $match[0];
 			
-			$this->scriptPath = $this->documentRoot.$this->uriPath;
+			$this->CGIVars['SCRIPT_FILENAME'] = $this->CGIVars['DOCUMENT_ROOT']
+				.$this->CGIVars['SCRIPT_NAME']
+				;
 
-			// resolve directory index files
-			if (is_dir($this->scriptPath)) {
-				if (is_file($this->scriptPath.'index.html')) {
-					$this->scriptPath .= 'index.html';
-					$this->uriPath .= 'index.html';
-				} elseif (is_file($this->scriptPath.'index.php')) {
-					$this->scriptPath .= 'index.php';
-					$this->uriPath .= 'index.php';
+			// Resolve directory index files
+			if (is_dir($this->CGIVars['SCRIPT_FILENAME'])) {
+				if (is_file($this->CGIVars['SCRIPT_FILENAME'].'index.html')) {
+					$this->CGIVars['SCRIPT_FILENAME'] .= 'index.html';
+					$this->CGIVars['SCRIPT_NAME'] .= 'index.html';
+				} elseif (is_file($this->CGIVars['SCRIPT_FILENAME'].'index.php')) {
+					$this->CGIVars['SCRIPT_FILENAME'] .= 'index.php';
+					$this->CGIVars['SCRIPT_NAME'] .= 'index.php';
 				}
-			} elseif (!is_file($this->scriptPath)) {
-				$this->scriptPath = false;
+			} elseif (!is_file($this->CGIVars['SCRIPT_FILENAME'])) {
+				$this->CGIVars['SCRIPT_FILENAME'] = false;
+			}
+			
+			// $_ENV['QUERY_STRING']
+			if (preg_match("/\?([^\s]+)/", $this->CGIVars['REQUEST_URI'], $match)) {
+				$this->CGIVars['QUERY_STRING'] = $match[1];
+			}
+			
+			// $_ENV['HTTP_*']
+			if (preg_match_all("/^([^:]+): (.+)\s$/m", $this->headerRaw, $match)) {
+				for ($i = 0; $i < count($match[1]); $i++){
+					// eg. User-Agent -> HTTP_USER_AGENT
+					$this->CGIVars['HTTP_'.strtoupper(str_replace('-','_',$match[1][$i]))]
+						= $match[2][$i];
+				}
+			}
+			
+			// POST METHOD
+			// $_ENV['CONTENT_LENGTH']
+			// $_ENV['CONTENT_TYPE']
+			if ($this->CGIVars['REQUEST_METHOD'] == 'POST') {
+				$this->CGIVars['CONTENT_LENGTH'] = strlen($this->postMessage);
+				if (isset($this->CGIVars['HTTP_CONTENT_TYPE'])) {
+					$this->CGIVars['CONTENT_TYPE'] = $this->CGIVars['HTTP_CONTENT_TYPE'];
+				}
 			}
 		}
-		
 	}
 	
 	public function getPostMessage() {
@@ -88,87 +123,37 @@ class Request {
 		return $this->valid;
 	}
 	
-	public function getMethod() {
-		return $this->method;
-	}
-	
-	public function getPath() {
-		return $this->uriPath;
-	}
-	
-	public function getQueryString() {
-		if (preg_match("/\?([^\s]+)/", $this->uri, $match)) {
-			return $match[1];
-		}
-		return false;
-	}
-	
-	public function getURI() {
-		return $this->uri;
-	}
-	
 	public function getHeaderRaw() {
 		return $this->headerRaw;
-	}
-	
-	public function getContent() {
-		return $this->content;
 	}
 	
 	public function getContentRaw() {
 		return $this->contentRaw;
 	}
 	
-	public function getDocumentRoot() {
-		return $this->documentRoot;
-	}
-	
-	public function getScriptPath() {
-		return $this->scriptPath;
-	}
-	
+
 	public function getCGIVars() {
-		
-		$vars = array();
-		
-		// Minimum CGI Environments Variables
-		$vars['REQUEST_METHOD'] = $this->getMethod();
-		$vars['QUERY_STRING'] = $this->getQueryString();
-		$vars['REQUEST_URI'] = $this->getURI();
-		$vars['SCRIPT_NAME'] = $this->getPath();
-		$vars['REMOTE_ADDR'] = $this->getRemoteHost();
-		$vars['REMOTE_PORT'] = $this->getRemotePort();
-		$vars['SCRIPT_FILENAME'] = $this->getScriptPath();
-		$vars['DOCUMENT_ROOT'] = $this->getDocumentRoot();
-		$vars['REDIRECT_STATUS'] = 200;
-		$vars['GATEWAY_INTERFACE'] = 'CGI/1.1';
-		
-		// Passthrough client HTTP Headers
-		if (preg_match_all("/^([^:]+): (.+)\s$/m", $this->headerRaw, $match)) {
-			for ($i = 0; $i < count($match[1]); $i++){
-				// eg. User-Agent -> HTTP_USER_AGENT
-				$vars['HTTP_'.strtoupper(str_replace('-','_',$match[1][$i]))]
-					= $match[2][$i];
-			}
-		}
-		
-		// POST Method
-		if ($this->getMethod() == 'POST') {
-			$vars['CONTENT_LENGTH'] = strlen($this->getPostMessage());
-			if (isset($vars['HTTP_CONTENT_TYPE'])) {
-				$vars['CONTENT_TYPE'] = $vars['HTTP_CONTENT_TYPE'];
-			}
-		}
-		
-		return $vars;
+		return $this->CGIVars;
 	}
 	
-	public function getRemoteHost() {
-		return $this->remoteHost;
+	/**
+	 * Set CGIVar value
+	 * defined CGIVar can not be changed
+	 * @return boolean
+	 **/
+	public function setCGIVar($name, $value) {
+		if (isset($this->CGIVars[$name])) {
+			return false;
+		}
+		return $this->CGIVars[$name] = $value;
+		return $value;
 	}
 	
-	public function getRemotePort() {
-		return $this->remotePort;
+	public function getCGIVar($name) {
+		if (isset($this->CGIVars[$name])) {
+			return $this->CGIVars[$name];
+		}
+		return null;
 	}
 	
 	public function getMimeContentType() {
@@ -357,11 +342,12 @@ class Request {
 			,'xyz' => 'chemical/x-pdb'
 			);
 			
-			if (preg_match("/[^\.]+$/", $this->getScriptPath(), $match)) {
+			if (preg_match("/[^\.]+$/", $this->CGIVars['SCRIPT_FILENAME'], $match)) {
 				if (isset($mimeContentType[$match[0]])) {
 					return $mimeContentType[$match[0]]; 
 				}
 			}
+			
 			return $this->mimeContentType;
 	}
 	
