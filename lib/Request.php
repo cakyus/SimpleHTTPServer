@@ -57,7 +57,7 @@ class Request {
         
         // $_ENV['REQUEST_METHOD']
         // $_ENV['REQUEST_URI']
-        if (preg_match("/^(GET|POST) ([^\s]+) HTTP\/[0-9]\.[0-9]\r\n(.+?)(\r\n\r\n(.*))?$/s"
+        if (preg_match("/^([A-Z]+) ([^\s]+) HTTP\/[0-9]\.[0-9]\r\n(.+?)(\r\n\r\n(.*))?$/s"
 			, $this->contentRaw, $match)) {
 			$this->CGIVars['REQUEST_METHOD'] = $match[1];
 			$this->CGIVars['REQUEST_URI'] = $match[2];
@@ -76,19 +76,6 @@ class Request {
 				.$this->CGIVars['SCRIPT_NAME']
 				;
 
-			// Resolve directory index files
-			if (is_dir($this->CGIVars['SCRIPT_FILENAME'])) {
-				if (is_file($this->CGIVars['SCRIPT_FILENAME'].'index.html')) {
-					$this->CGIVars['SCRIPT_FILENAME'] .= 'index.html';
-					$this->CGIVars['SCRIPT_NAME'] .= 'index.html';
-				} elseif (is_file($this->CGIVars['SCRIPT_FILENAME'].'index.php')) {
-					$this->CGIVars['SCRIPT_FILENAME'] .= 'index.php';
-					$this->CGIVars['SCRIPT_NAME'] .= 'index.php';
-				}
-			} elseif (!is_file($this->CGIVars['SCRIPT_FILENAME'])) {
-				$this->CGIVars['SCRIPT_FILENAME'] = false;
-			}
-			
 			// $_ENV['QUERY_STRING']
 			if (preg_match("/\?([^\s]+)/", $this->CGIVars['REQUEST_URI'], $match)) {
 				$this->CGIVars['QUERY_STRING'] = $match[1];
@@ -138,15 +125,11 @@ class Request {
 	
 	/**
 	 * Set CGIVar value
-	 * defined CGIVar can not be changed
 	 * @return boolean
 	 **/
 	public function setCGIVar($name, $value) {
-		if (isset($this->CGIVars[$name])) {
-			return false;
-		}
-		return $this->CGIVars[$name] = $value;
-		return $value;
+		$this->CGIVars[$name] = $value;
+		return true;
 	}
 	
 	public function getCGIVar($name) {

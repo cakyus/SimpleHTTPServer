@@ -55,19 +55,20 @@ class Server {
 			
 			$request = new Request($clientSock, $this);
 			$response = new Response($request);
-			$message = $response->getMessage();
-			$messageSize = strlen($message);
+			$content = $response->getContent();
+			$contentSize = strlen($content);
 			
 			$logger->write(
 				  $request->getCGIVar('REMOTE_ADDR')
 				, $request->getCGIVar('REMOTE_PORT')
+				, $response->getStatus()
+				, $response->getModule()
 				, $request->getCGIVar('REQUEST_METHOD')
 				, $request->getCGIVar('SCRIPT_NAME')
-				, $response->getStatus()
-				, $messageSize
+				, $contentSize
 				);
 			
-			socket_write($clientSock, $message, $messageSize);
+			socket_write($clientSock, $content, $contentSize);
 			socket_close($clientSock);
 		};
     

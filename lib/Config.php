@@ -17,8 +17,12 @@ class Config {
 	// HTTP Version which server supported
 	public $httpVersion = '1.1';
 	
+	// Response modules
+	public $modules;
+	
 	public function __construct() {
 		$this->documentRoot = dirname(dirname(__FILE__)).'/htdocs';
+		$this->modules = array(	'Index', 'Directory', 'CGI', 'File');
 	}
 	
 }
