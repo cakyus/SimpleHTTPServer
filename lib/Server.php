@@ -43,6 +43,9 @@ class Server {
 			return false;
 		}
 		
+		// write PHP pid into php.pid
+		file_put_contents('php.pid', getmygid());
+		
 		while (true) {
 			
 			if (($clientSock = socket_accept($sock)) === false) {
