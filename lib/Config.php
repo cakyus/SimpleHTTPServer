@@ -20,9 +20,17 @@ class Config {
 	// Response modules
 	public $modules;
 	
+	// Location of log file path
+	public $logPath;
+	
+	// Location of pid file path
+	public $pidPath;
+	
 	public function __construct() {
 		$this->documentRoot = dirname(dirname(__FILE__)).'/htdocs';
 		$this->modules = array(	'Index', 'Directory', 'CGI', 'File');
+		$this->logPath = sys_get_temp_dir().'/SimpleHTTPServer.log';
+		$this->pidPath = sys_get_temp_dir().'/SimpleHTTPServer.pid';
 	}
 	
 }

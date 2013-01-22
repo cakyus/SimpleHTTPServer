@@ -43,8 +43,8 @@ class Server {
 			return false;
 		}
 		
-		// write PHP pid into php.pid
-		file_put_contents('php.pid', getmygid());
+		// write PHP pid into .pid
+		file_put_contents($config->pidPath, getmygid());
 		
 		while (true) {
 			

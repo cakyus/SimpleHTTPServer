@@ -15,6 +15,7 @@ class CGI extends Module implements IModule {
 	public function __construct(Request $request) {
 		parent::__construct($request);
 		
+		$config = new \SimpleHTTPServer\Config;
 		$file = $request->getCGIVar('SCRIPT_FILENAME');
 		
 		if (	is_file($file) == false
@@ -32,7 +33,7 @@ class CGI extends Module implements IModule {
 		$cmdIO = array(
 			  0 => array('pipe', 'r') // stdin
 			, 1 => array('pipe', 'w') // stdout
-			, 2 => array('file', 'error.log', 'aw') // stderr
+			, 2 => array('file', $config->logPath, 'aw') // stderr
 			);
 		
 		// REDIRECT_STATUS is required by php-cgi
