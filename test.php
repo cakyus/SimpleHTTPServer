@@ -2,6 +2,12 @@
 
 error_reporting(E_ALL);
 
+// <COMPATIBILITY>
+//     <WINDOWS>
+date_default_timezone_set('Asia/Jakarta');
+//     </WINDOWS>
+// </COMPATIBILITY>
+
 // Main files
 require_once('lib/Config.php');
 require_once('lib/Server.php');
