@@ -26,11 +26,25 @@ class Config {
 	// Location of pid file path
 	public $pidPath;
 	
+	// Location of php-cgi path
+	public $phpCGIPath;
+	
 	public function __construct() {
 		$this->documentRoot = dirname(dirname(__FILE__)).'/htdocs';
 		$this->modules = array(	'Index', 'Directory', 'CGI', 'File');
 		$this->logPath = sys_get_temp_dir().'/SimpleHTTPServer.log';
 		$this->pidPath = sys_get_temp_dir().'/SimpleHTTPServer.pid';
+		
+		// locate php-cgi
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+			//windows
+			$phpExePath = exec('where php.exe');
+			$phpDir = dirname($phpExePath);
+			$this->phpCGIPath = $phpDir.'/php-cgi.exe';
+		} else {
+			// Linux ?
+			$this->phpCGIPath = 'php-cgi';
+		}
 	}
 	
 }

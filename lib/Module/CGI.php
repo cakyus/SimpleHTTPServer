@@ -43,7 +43,7 @@ class CGI extends Module implements IModule {
 		$cmdEnv = $request->getCGIVars();
 		
 		$cmdHadler = proc_open(
-			  'php-cgi', $cmdIO, $cmdPipes
+			  $config->phpCGIPath, $cmdIO, $cmdPipes
 			, $request->getCGIVar('DOCUMENT_ROOT'), $cmdEnv
 			);
 			
