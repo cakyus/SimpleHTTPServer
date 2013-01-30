@@ -18,6 +18,7 @@ class Server {
 		$this->serverPort = $config->serverPort;
 		
 		$logger->write('Serving at '.$this->serverName.' port '.$this->serverPort);
+		$logger->write('Log path at '.$config->logPath);
 		
 		if (($sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false) {
 			$logger->write('socket_create() failed. '.socket_strerror(socket_last_error()));
