@@ -39,6 +39,7 @@ class CGI extends Module implements IModule {
 		// REDIRECT_STATUS is required by php-cgi
 		$request->setCGIVar('REDIRECT_STATUS', 200);
 		$request->setCGIVar('GATEWAY_INTERFACE', 'CGI/1.1');
+		$request->setCGIVar('TEMP', $_SERVER['TEMP']);
 		
 		$cmdEnv = $request->getCGIVars();
 		
