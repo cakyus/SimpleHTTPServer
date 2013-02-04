@@ -82,11 +82,11 @@ class Request {
 			}
 			
 			// $_ENV['HTTP_*']
-			if (preg_match_all("/^([^:]+): (.+)\s$/m", $this->headerRaw, $match)) {
+			if (preg_match_all("/^([^:]+): (.+)$/m", $this->headerRaw, $match)) {
 				for ($i = 0; $i < count($match[1]); $i++){
 					// eg. User-Agent -> HTTP_USER_AGENT
 					$this->CGIVars['HTTP_'.strtoupper(str_replace('-','_',$match[1][$i]))]
-						= $match[2][$i];
+						= trim($match[2][$i]);
 				}
 			}
 			
